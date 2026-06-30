@@ -1,5 +1,7 @@
 # Hexecontahedra
 
+![Rhombic Hexecontahedron](assets/rhombic-hexecontahedron.png)
+
 Interactive 3D visualizations of 60-faced polyhedra, viewable in a web browser.
 
 ## Polyhedra
