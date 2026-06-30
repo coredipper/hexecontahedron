@@ -2,7 +2,7 @@
 
 ![Rhombic Hexecontahedron](assets/rhombic-hexecontahedron.png)
 
-Interactive 3D visualizations of 60-faced polyhedra, viewable in a web browser.
+Interactive 3D visualizations of 32 different 60-faced polyhedra, viewable in a web browser.
 
 ## Polyhedra
 
@@ -13,6 +13,7 @@ Interactive 3D visualizations of 60-faced polyhedra, viewable in a web browser.
 | Pentagonal Hexecontahedron | Irregular pentagons | Catalan solid |
 | Triakis Icosahedron | Isosceles triangles | Catalan solid |
 | Rhombic Hexecontahedron | Golden rhombi | Concave form |
+| Star Hexecontahedra (1-27) | Intersecting triangles | Procedurally generated uniform star-duals |
 
 ## Usage
 
