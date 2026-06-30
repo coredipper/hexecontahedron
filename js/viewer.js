@@ -33,7 +33,7 @@ function initViewer(polyhedron) {
 
   // Scene
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xf5f5f5);
+  // We use CSS background for viewer
 
   // Camera
   const camera = new THREE.PerspectiveCamera(
@@ -45,29 +45,34 @@ function initViewer(polyhedron) {
   camera.position.set(0, 0, 5);
 
   // Renderer
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setClearColor(0x000000, 0);
   container.appendChild(renderer.domElement);
 
   // Lights
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
   scene.add(ambientLight);
 
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
   directionalLight.position.set(5, 10, 7);
   scene.add(directionalLight);
 
-  const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+  const backLight = new THREE.DirectionalLight(0x7aa2f7, 0.8);
   backLight.position.set(-5, -5, -5);
   scene.add(backLight);
 
   // Build geometry from polyhedron data
   const geometry = buildGeometry(polyhedron);
 
-  // Material - soft blue with good lighting response
-  const material = new THREE.MeshStandardMaterial({
-    color: 0x4a90d9,
+  // Material - premium glassy physical material
+  const material = new THREE.MeshPhysicalMaterial({
+    color: 0x7aa2f7,
+    metalness: 0.3,
+    roughness: 0.2,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.1,
     flatShading: true,
     side: THREE.DoubleSide
   });
@@ -77,7 +82,12 @@ function initViewer(polyhedron) {
 
   // Edge lines for definition
   const edges = new THREE.EdgesGeometry(geometry, 15);
-  const lineMaterial = new THREE.LineBasicMaterial({ color: 0x333333, linewidth: 1 });
+  const lineMaterial = new THREE.LineBasicMaterial({ 
+    color: 0xffffff, 
+    transparent: true,
+    opacity: 0.3,
+    linewidth: 1 
+  });
   const lineSegments = new THREE.LineSegments(edges, lineMaterial);
   scene.add(lineSegments);
 
