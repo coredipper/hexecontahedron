@@ -1,181 +1,148 @@
-// Three.js viewer for hexecontahedra
+// Interactive viewer for one hexecontahedron (viewer.html?shape=<id>).
+
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
-import { getPolyhedron } from './registry.js';
+import { FAMILIES, describe, getPolyhedron, polyhedra } from './registry.js';
+import { addLights, createPolyhedronObject, createRenderer, prefersReducedMotion } from './render.js';
 
-// Get shape ID from URL parameter
-const params = new URLSearchParams(window.location.search);
-const shapeId = params.get('shape');
+const $ = (id) => document.getElementById(id);
+const shapeId = new URLSearchParams(window.location.search).get('shape');
+const index = polyhedra.findIndex((p) => p.id === shapeId);
 
-if (!shapeId) {
-  document.getElementById('shape-name').textContent = 'No shape specified';
-  document.getElementById('shape-description').textContent = 'Add ?shape=<id> to the URL';
+if (index < 0) {
+  $('shape-name').textContent = shapeId ? 'Shape not found' : 'No shape specified';
+  $('shape-description').textContent = shapeId
+    ? `There is no polyhedron with the id "${shapeId}".`
+    : 'Open a polyhedron from the gallery.';
+  $('viewer-panel').hidden = true;
 } else {
-  const polyhedron = getPolyhedron(shapeId);
-
-  if (!polyhedron) {
-    document.getElementById('shape-name').textContent = 'Shape not found';
-    document.getElementById('shape-description').textContent = `Unknown shape: ${shapeId}`;
-  } else {
-    // Update header
-    document.getElementById('shape-name').textContent = polyhedron.name;
-    document.getElementById('shape-description').textContent = polyhedron.description;
-    document.title = `${polyhedron.name} - Hexecontahedra`;
-
-    // Initialize Three.js
+  try {
+    const polyhedron = getPolyhedron(shapeId);
+    showInfo(polyhedron);
+    setUpNavigation();
     initViewer(polyhedron);
+  } catch (error) {
+    console.error(error);
+    $('shape-name').textContent = 'Could not build this polyhedron';
+    $('shape-description').textContent = error instanceof Error ? error.message : String(error);
+    $('viewer-panel').hidden = true;
   }
 }
 
+function showInfo(p) {
+  document.title = `${p.name} · Hexecontahedra`;
+  $('shape-family').textContent = FAMILIES[p.family].short;
+  $('shape-name').textContent = p.name;
+  $('shape-description').textContent = describe(p);
+
+  const facts = [
+    ['Faces', `${p.counts.faces} (${p.faceShape.toLowerCase()})`],
+    ['Edges', String(p.counts.edges)],
+    ['Vertices', String(p.counts.vertices)],
+  ];
+  if (p.dual) {
+    facts.push(['Dual of', `${p.dual.name} (${p.dual.index})`]);
+    facts.push(['Wythoff symbol', p.dual.wythoff]);
+  }
+  const list = $('shape-facts');
+  for (const [term, value] of facts) {
+    const dt = document.createElement('dt');
+    dt.textContent = term;
+    const dd = document.createElement('dd');
+    dd.textContent = value;
+    list.append(dt, dd);
+  }
+  if (p.note) $('shape-note').textContent = p.note;
+  else $('shape-note').remove();
+  // On phones the details start folded so the model stays visible.
+  if (window.matchMedia('(max-width: 600px)').matches) $('shape-details').open = false;
+}
+
+function setUpNavigation() {
+  const neighbour = (step) => polyhedra[(index + step + polyhedra.length) % polyhedra.length];
+  const link = (element, entry, label) => {
+    element.href = `viewer.html?shape=${encodeURIComponent(entry.id)}`;
+    element.title = `${label}: ${entry.name}`;
+    element.setAttribute('aria-label', `${label}: ${entry.name}`);
+  };
+  link($('prev-link'), neighbour(-1), 'Previous');
+  link($('next-link'), neighbour(1), 'Next');
+  $('position').textContent = `${index + 1} / ${polyhedra.length}`;
+}
+
 function initViewer(polyhedron) {
-  const container = document.getElementById('canvas-container');
-
-  // Scene
-  const scene = new THREE.Scene();
-  // We use CSS background for viewer
-
-  // Camera
-  const camera = new THREE.PerspectiveCamera(
-    50,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-  );
-  camera.position.set(0, 0, 5);
-
-  // Renderer
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  const container = $('canvas-container');
+  const renderer = createRenderer();
+  if (!renderer) {
+    container.textContent = 'This viewer needs WebGL, which is not available in this browser.';
+    container.classList.add('webgl-error');
+    return;
+  }
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setClearColor(0x000000, 0);
+  renderer.domElement.setAttribute('role', 'img');
+  renderer.domElement.setAttribute('aria-label', `3D model of the ${polyhedron.name}`);
   container.appendChild(renderer.domElement);
 
-  // Lights
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-  scene.add(ambientLight);
+  const scene = new THREE.Scene();
+  addLights(scene);
+  const object = createPolyhedronObject(polyhedron, { radius: 1.5, edgeOpacity: 0.35 });
+  object.rotation.set(0.35, 0.6, 0);
+  scene.add(object);
 
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
-  directionalLight.position.set(5, 10, 7);
-  scene.add(directionalLight);
+  // Camera distance that keeps the bounding sphere (radius 1.5) in view with
+  // some margin, using the narrower of the two fields of view (portrait
+  // phones are limited by the horizontal one).
+  const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+  const fitDistance = () => {
+    const vertical = THREE.MathUtils.degToRad(camera.fov / 2);
+    const horizontal = Math.atan(Math.tan(vertical) * camera.aspect);
+    return (1.41 * 1.5) / Math.sin(Math.min(vertical, horizontal));
+  };
+  camera.position.set(0, 0, fitDistance());
 
-  const backLight = new THREE.DirectionalLight(0x7aa2f7, 0.8);
-  backLight.position.set(-5, -5, -5);
-  scene.add(backLight);
-
-  // Build geometry from polyhedron data
-  const geometry = buildGeometry(polyhedron);
-
-  // Material - premium glassy physical material
-  const material = new THREE.MeshPhysicalMaterial({
-    color: 0x7aa2f7,
-    metalness: 0.3,
-    roughness: 0.2,
-    clearcoat: 1.0,
-    clearcoatRoughness: 0.1,
-    flatShading: true,
-    side: THREE.DoubleSide
-  });
-
-  const mesh = new THREE.Mesh(geometry, material);
-  scene.add(mesh);
-
-  // Edge lines for definition
-  const edges = new THREE.EdgesGeometry(geometry, 15);
-  const lineMaterial = new THREE.LineBasicMaterial({ 
-    color: 0xffffff, 
-    transparent: true,
-    opacity: 0.3,
-    linewidth: 1 
-  });
-  const lineSegments = new THREE.LineSegments(edges, lineMaterial);
-  scene.add(lineSegments);
-
-  // Controls
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
   controls.minDistance = 2;
-  controls.maxDistance = 15;
+  controls.maxDistance = 25;
+  controls.autoRotate = !prefersReducedMotion();
+  controls.autoRotateSpeed = 1.2;
 
-  // Animation loop
-  function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-    renderer.render(scene, camera);
-  }
-  animate();
+  const rotateButton = $('toggle-rotate');
+  const edgesButton = $('toggle-edges');
+  const setPressed = (button, on) => button.setAttribute('aria-pressed', String(on));
+  setPressed(rotateButton, controls.autoRotate);
+  setPressed(edgesButton, true);
+  const toggleRotate = () => {
+    controls.autoRotate = !controls.autoRotate;
+    setPressed(rotateButton, controls.autoRotate);
+  };
+  const toggleEdges = () => {
+    object.userData.edges.visible = !object.userData.edges.visible;
+    setPressed(edgesButton, object.userData.edges.visible);
+  };
+  rotateButton.addEventListener('click', toggleRotate);
+  edgesButton.addEventListener('click', toggleEdges);
 
-  // Handle resize
+  // Arrow keys browse. No single-letter shortcuts (WCAG 2.1.4); the toggles
+  // are ordinary buttons.
+  window.addEventListener('keydown', (event) => {
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    if (event.key === 'ArrowLeft') $('prev-link').click();
+    else if (event.key === 'ArrowRight') $('next-link').click();
+  });
+
   window.addEventListener('resize', () => {
+    const before = fitDistance();
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
+    // Keep the user's zoom relative to the fitted distance.
+    camera.position.multiplyScalar(fitDistance() / before);
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
-}
 
-function buildGeometry(polyhedron) {
-  let geometry;
-
-  // Use ConvexGeometry for convex polyhedra (more reliable)
-  // Use explicit faces for non-convex polyhedra
-  if (polyhedron.isConvex !== false && (!polyhedron.faceIndices || polyhedron.faceIndices.length === 0)) {
-    // Convert vertices to THREE.Vector3 array for ConvexGeometry
-    const points = polyhedron.vertices.map(v => new THREE.Vector3(v[0], v[1], v[2]));
-    geometry = new ConvexGeometry(points);
-  } else {
-    // Use explicit face indices
-    geometry = buildExplicitGeometry(polyhedron);
-  }
-
-  // Center the geometry
-  geometry.computeBoundingBox();
-  const center = new THREE.Vector3();
-  geometry.boundingBox.getCenter(center);
-  geometry.translate(-center.x, -center.y, -center.z);
-
-  // Scale to fit nicely in view
-  geometry.computeBoundingSphere();
-  const scale = 1.5 / geometry.boundingSphere.radius;
-  geometry.scale(scale, scale, scale);
-
-  return geometry;
-}
-
-function buildExplicitGeometry(polyhedron) {
-  const geometry = new THREE.BufferGeometry();
-
-  const { vertices, faceIndices } = polyhedron;
-
-  // Convert to flat arrays for BufferGeometry
-  const positions = [];
-  const indices = [];
-
-  // Add all vertices
-  for (const [x, y, z] of vertices) {
-    positions.push(x, y, z);
-  }
-
-  // Add face indices (triangles)
-  for (const face of faceIndices) {
-    if (face.length === 3) {
-      // Triangle
-      indices.push(face[0], face[1], face[2]);
-    } else if (face.length === 4) {
-      // Quad - split into two triangles
-      indices.push(face[0], face[1], face[2]);
-      indices.push(face[0], face[2], face[3]);
-    } else if (face.length > 4) {
-      // Polygon - fan triangulation from first vertex
-      for (let i = 1; i < face.length - 1; i++) {
-        indices.push(face[0], face[i], face[i + 1]);
-      }
-    }
-  }
-
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setIndex(indices);
-  geometry.computeVertexNormals();
-
-  return geometry;
+  renderer.setAnimationLoop(() => {
+    controls.update();
+    renderer.render(scene, camera);
+  });
 }
