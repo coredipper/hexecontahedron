@@ -4,9 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hexecontahedron Viewer</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="preload" href="vendor/fonts/outfit/outfit-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="viewer-body">
@@ -14,11 +12,27 @@
     <header class="viewer-header">
       <div class="header-glass">
         <a href="index.html" class="back-link">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
           Back to Gallery
         </a>
+        <p class="shape-family" id="shape-family"></p>
         <h1 id="shape-name">Loading...</h1>
         <p id="shape-description"></p>
+        <div id="viewer-panel">
+          <details class="shape-details" id="shape-details" open>
+            <summary>Details</summary>
+            <dl class="shape-facts" id="shape-facts"></dl>
+            <p class="shape-note" id="shape-note"></p>
+          </details>
+          <nav class="viewer-controls" aria-label="Viewer controls">
+            <a id="prev-link" class="control-button" href="#">&#8249;</a>
+            <span id="position" class="position"></span>
+            <a id="next-link" class="control-button" href="#">&#8250;</a>
+            <button id="toggle-rotate" class="control-button" type="button" aria-pressed="true">Rotate</button>
+            <button id="toggle-edges" class="control-button" type="button" aria-pressed="true">Edges</button>
+          </nav>
+          <p class="hint">Drag to rotate, scroll to zoom, &larr; &rarr; to browse.</p>
+        </div>
       </div>
     </header>
     <div id="canvas-container"></div>
@@ -26,8 +40,8 @@
   <script type="importmap">
     {
       "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        "three": "./vendor/three/three.module.min.js",
+        "three/addons/": "./vendor/three/addons/"
       }
     }
   </script>

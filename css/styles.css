@@ -1,3 +1,22 @@
+/* Outfit variable font, served from vendor/fonts/outfit (SIL OFL 1.1). */
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('../vendor/fonts/outfit/outfit-latin-ext-wght-normal.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('../vendor/fonts/outfit/outfit-latin-wght-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 :root {
   --bg-color: #0f111a;
   --bg-gradient: linear-gradient(135deg, #0f111a 0%, #1a1b26 100%);
@@ -9,6 +28,7 @@
   --card-border: rgba(255, 255, 255, 0.08);
   --glass-bg: rgba(15, 17, 26, 0.6);
   --glass-border: rgba(255, 255, 255, 0.1);
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 * {
@@ -28,10 +48,16 @@ body {
   overflow-x: hidden;
 }
 
-/* Background Blobs for Visual Aesthetics */
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Background blobs */
 .background-effects {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
+  inset: 0;
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
@@ -46,15 +72,19 @@ body {
 }
 
 .blob-1 {
-  width: 600px; height: 600px;
+  width: 600px;
+  height: 600px;
   background: rgba(122, 162, 247, 0.3);
-  top: -200px; left: -200px;
+  top: -200px;
+  left: -200px;
 }
 
 .blob-2 {
-  width: 500px; height: 500px;
+  width: 500px;
+  height: 500px;
   background: rgba(187, 154, 247, 0.25);
-  bottom: -100px; right: -100px;
+  bottom: -100px;
+  right: -100px;
   animation-delay: -10s;
 }
 
@@ -63,7 +93,7 @@ body {
   100% { transform: translate(50px, 50px) scale(1.1); }
 }
 
-/* Index Page */
+/* Index page */
 .index-container {
   max-width: 1400px;
   margin: 0 auto;
@@ -72,17 +102,18 @@ body {
 
 .index-header {
   text-align: center;
-  margin-bottom: 4rem;
+  margin-bottom: 3rem;
   animation: fadeInDown 0.8s ease-out;
 }
 
 .index-header h1 {
-  font-size: 3.5rem;
+  font-size: clamp(2.4rem, 7vw, 3.5rem);
   font-weight: 600;
   letter-spacing: -0.02em;
   margin-bottom: 0.5rem;
   background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -90,12 +121,58 @@ body {
   color: var(--text-secondary);
   font-size: 1.2rem;
   font-weight: 300;
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
+.webgl-warning {
+  display: none;
+  text-align: center;
+  color: #f7768e;
+  margin-bottom: 2rem;
+}
+
+.no-webgl .webgl-warning {
+  display: block;
 }
 
 .polyhedra-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
   gap: 2rem;
+}
+
+.family-heading {
+  grid-column: 1 / -1;
+  font-size: 1.1rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--card-border);
+  padding-bottom: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.family-heading:first-child {
+  margin-top: 0;
+}
+
+/* The shared preview canvas covers the window; it draws into each card's
+   preview rectangle and lets clicks through to the cards below. */
+.gallery-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  pointer-events: none;
+  /* Fade in with the cards: the previews are not inside the cards, so the
+     card animation does not reach them. */
+  animation: fadeInCanvas 0.8s ease-out backwards;
+}
+
+@keyframes fadeInCanvas {
+  from { opacity: 0; }
 }
 
 .polyhedron-card {
@@ -103,19 +180,19 @@ body {
   border: 1px solid var(--card-border);
   border-radius: 16px;
   overflow: hidden;
-  cursor: pointer;
   text-decoration: none;
   color: inherit;
   display: block;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), border-color 0.4s, box-shadow 0.4s;
   position: relative;
-  opacity: 0;
-  animation: fadeIn 0.6s ease-out forwards;
+  /* "backwards", not "forwards": a held end state would override the hover transform. */
+  animation: fadeIn 0.6s ease-out backwards;
 }
 
-.polyhedron-card:hover {
+.polyhedron-card:hover,
+.polyhedron-card:focus-visible {
   transform: translateY(-8px) scale(1.02);
   border-color: rgba(122, 162, 247, 0.3);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(122, 162, 247, 0.1);
@@ -125,30 +202,23 @@ body {
   width: 100%;
   height: 240px;
   background: rgba(0, 0, 0, 0.2);
-  position: relative;
-}
-
-.card-preview canvas {
-  width: 100% !important;
-  height: 100% !important;
 }
 
 .card-info {
-  padding: 1.5rem;
+  padding: 1.25rem 1.5rem 1.5rem;
   border-top: 1px solid var(--card-border);
-  position: relative;
-  z-index: 20;
 }
 
-.card-info h2 {
-  font-size: 1.25rem;
+.card-info h3 {
+  font-size: 1.2rem;
   font-weight: 500;
-  margin-bottom: 0.5rem;
+  line-height: 1.3;
+  margin-bottom: 0.4rem;
   color: var(--text-primary);
   transition: color 0.3s;
 }
 
-.polyhedron-card:hover .card-info h2 {
+.polyhedron-card:hover .card-info h3 {
   color: var(--accent);
 }
 
@@ -158,7 +228,19 @@ body {
   font-weight: 300;
 }
 
-/* Viewer Page */
+.card-tag {
+  display: inline-block;
+  margin-top: 0.6rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--accent);
+  background: rgba(122, 162, 247, 0.08);
+  border: 1px solid rgba(122, 162, 247, 0.2);
+  border-radius: 6px;
+  padding: 0.1rem 0.45rem;
+}
+
+/* Viewer page */
 .viewer-body {
   overflow: hidden;
   background: #000;
@@ -172,6 +254,16 @@ body {
 
 .viewer-container canvas {
   display: block;
+}
+
+#canvas-container.webgl-error {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-secondary);
 }
 
 .viewer-header {
@@ -191,7 +283,7 @@ body {
   padding: 1.5rem 2rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   pointer-events: auto;
-  max-width: 400px;
+  max-width: 420px;
 }
 
 .back-link {
@@ -212,13 +304,25 @@ body {
   color: var(--accent);
 }
 
+.shape-family {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.shape-family:empty {
+  display: none;
+}
+
 .header-glass h1 {
-  font-size: 2rem;
+  font-size: 1.9rem;
   font-weight: 600;
   line-height: 1.2;
   margin-bottom: 0.5rem;
   background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -227,6 +331,117 @@ body {
   color: var(--text-secondary);
   font-weight: 300;
   line-height: 1.5;
+}
+
+.shape-details > summary {
+  display: none; /* always open on wide screens; see the phone layout below */
+}
+
+.shape-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.2rem 1rem;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.shape-facts dt {
+  color: var(--text-secondary);
+}
+
+.shape-facts dd {
+  color: var(--text-primary);
+}
+
+.header-glass .shape-note {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.viewer-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.control-button {
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  padding: 0.3rem 0.75rem;
+  cursor: pointer;
+  text-decoration: none;
+  line-height: 1.4;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.control-button:hover {
+  border-color: rgba(122, 162, 247, 0.5);
+}
+
+.control-button[aria-pressed="true"] {
+  background: rgba(122, 162, 247, 0.2);
+  border-color: rgba(122, 162, 247, 0.5);
+}
+
+.control-button[aria-pressed="false"] {
+  color: var(--text-secondary);
+}
+
+.position {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  min-width: 3.5rem;
+  text-align: center;
+}
+
+.header-glass .hint {
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 600px) {
+  .index-container {
+    padding: 2.5rem 1rem;
+  }
+
+  .viewer-header {
+    top: 1rem;
+    left: 1rem;
+    right: 1rem;
+  }
+
+  .header-glass {
+    max-width: none;
+    padding: 1rem 1.25rem;
+  }
+
+  .header-glass h1 {
+    font-size: 1.4rem;
+  }
+
+  .shape-details > summary {
+    display: list-item;
+    cursor: pointer;
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+  }
+
+  .shape-facts,
+  .header-glass .shape-note {
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+  }
+
+  .header-glass .hint {
+    display: none;
+  }
 }
 
 /* Animations */
@@ -238,4 +453,22 @@ body {
 @keyframes fadeInDown {
   from { opacity: 0; transform: translateY(-20px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blob,
+  .index-header,
+  .polyhedron-card,
+  .gallery-canvas {
+    animation: none;
+  }
+
+  .polyhedron-card {
+    transition: border-color 0.2s;
+  }
+
+  .polyhedron-card:hover,
+  .polyhedron-card:focus-visible {
+    transform: none;
+  }
 }

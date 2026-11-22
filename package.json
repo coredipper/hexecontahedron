@@ -1,0 +1,14 @@
+{
+  "name": "hexecontahedra",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interactive 3D viewer for the 32 hexecontahedra (60-faced polyhedra)",
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
