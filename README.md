@@ -114,6 +114,7 @@ js/polyhedra/              Shapes built by hand (rhombic hexecontahedron)
 js/render.js               Shared three.js setup
 js/index.js, js/viewer.js  Page scripts
 scripts/serve.mjs          Local static server
+vendor/three/              three.js 0.160.0 (unchanged copy from npm)
 test/                      Geometry tests
 ```
 
@@ -129,7 +130,10 @@ Then update the expected count in `test/geometry.test.mjs` and run `npm test`.
 
 ## Tech
 
-three.js 0.160 from a CDN through an import map, vanilla ES modules, no build step.
+three.js 0.160.0, vendored in `vendor/three/` (MIT; source and hash in
+`vendor/three/README.md`) and loaded through an import map. Vanilla ES modules,
+no build step, no third-party scripts at runtime. The Outfit font still loads
+from Google Fonts.
 
 ## References
 
