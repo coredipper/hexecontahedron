@@ -14,7 +14,7 @@ const EPS = 1e-9;
 const sub2 = (a, b) => [a[0] - b[0], a[1] - b[1]];
 const cross2 = (a, b) => a[0] * b[1] - a[1] * b[0];
 
-export function signedArea(poly) {
+function signedArea(poly) {
   let s = 0;
   for (let i = 0; i < poly.length; i++) s += cross2(poly[i], poly[(i + 1) % poly.length]);
   return s / 2;
@@ -63,7 +63,7 @@ function pointInTriangle(p, a, b, c) {
 }
 
 /** Ear clipping of a simple polygon. Returns triangles of 2D points. */
-export function earClip(input) {
+function earClip(input) {
   let poly = removeCollinear(input);
   if (signedArea(poly) < 0) poly = [...poly].reverse();
   const triangles = [];

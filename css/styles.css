@@ -37,6 +37,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: var(--bg-color);
@@ -49,9 +53,23 @@ body {
 }
 
 a:focus-visible,
-button:focus-visible {
+button:focus-visible,
+summary:focus-visible,
+input:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* Background blobs */
@@ -136,6 +154,70 @@ button:focus-visible {
   display: block;
 }
 
+.gallery-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: 2rem;
+}
+
+.filter-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.search-field {
+  flex: 1 1 240px;
+  max-width: 340px;
+}
+
+.gallery-search {
+  width: 100%;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 0.45rem 0.85rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.gallery-search::placeholder {
+  color: var(--text-secondary);
+}
+
+.gallery-search:hover,
+.gallery-search:focus {
+  border-color: rgba(122, 162, 247, 0.5);
+}
+
+.gallery-status {
+  flex-basis: 100%;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.gallery-status:empty {
+  display: none;
+}
+
+.gallery-empty {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: var(--text-secondary);
+}
+
+.gallery-empty p {
+  margin-bottom: 1rem;
+  font-size: 1.05rem;
+}
+
 .polyhedra-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
@@ -187,6 +269,7 @@ button:focus-visible {
   -webkit-backdrop-filter: blur(12px);
   transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), border-color 0.4s, box-shadow 0.4s;
   position: relative;
+  scroll-margin-top: 2rem;
   /* "backwards", not "forwards": a held end state would override the hover transform. */
   animation: fadeIn 0.6s ease-out backwards;
 }
@@ -249,6 +332,7 @@ button:focus-visible {
 .viewer-container {
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   position: relative;
 }
 
@@ -284,6 +368,9 @@ button:focus-visible {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   pointer-events: auto;
   max-width: 420px;
+  max-height: calc(100vh - 4rem);
+  max-height: calc(100dvh - 4rem);
+  overflow-y: auto;
 }
 
 .back-link {
@@ -410,6 +497,10 @@ button:focus-visible {
     padding: 2.5rem 1rem;
   }
 
+  .search-field {
+    max-width: none;
+  }
+
   .viewer-header {
     top: 1rem;
     left: 1rem;
@@ -418,6 +509,8 @@ button:focus-visible {
 
   .header-glass {
     max-width: none;
+    max-height: calc(100vh - 2rem);
+    max-height: calc(100dvh - 2rem);
     padding: 1rem 1.25rem;
   }
 

@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import catalog from '../js/catalog.js';
-import { getPolyhedron, describe as describeEntry } from '../js/registry.js';
+import { getPolyhedron, describe as describeEntry, matchesFilter, polyhedra } from '../js/registry.js';
 import { uniformPolyhedron, parseWythoff } from '../js/geometry/wythoff.js';
 import { polarDual } from '../js/geometry/dual.js';
 import { edgeList, faceNormal, meshData } from '../js/geometry/mesh.js';
@@ -369,16 +369,76 @@ test('every face of every polyhedron is triangulated exactly (3D path)', () => {
   }
 });
 
-test('mesh data is finite and scaled to the unit sphere', () => {
+test('mesh data is finite, outward-wound and scaled to the unit sphere', () => {
   for (const entry of catalog) {
     const mesh = meshData(getPolyhedron(entry.id));
     assert.ok(mesh.positions.length > 0 && mesh.positions.length % 9 === 0);
     assert.equal(mesh.normals.length, mesh.positions.length);
-    assert.ok(mesh.positions.every(Number.isFinite) && mesh.edges.every(Number.isFinite));
+    assert.ok(mesh.positions.every(Number.isFinite) && mesh.normals.every(Number.isFinite) && mesh.edges.every(Number.isFinite));
     let max = 0;
-    for (let i = 0; i < mesh.positions.length; i += 3) {
-      max = Math.max(max, Math.hypot(mesh.positions[i], mesh.positions[i + 1], mesh.positions[i + 2]));
+    for (let i = 0; i < mesh.positions.length; i += 9) {
+      const a = [mesh.positions[i], mesh.positions[i + 1], mesh.positions[i + 2]];
+      const b = [mesh.positions[i + 3], mesh.positions[i + 4], mesh.positions[i + 5]];
+      const c = [mesh.positions[i + 6], mesh.positions[i + 7], mesh.positions[i + 8]];
+      const n = [mesh.normals[i], mesh.normals[i + 1], mesh.normals[i + 2]];
+      max = Math.max(max, length(a), length(b), length(c));
+      assert.ok(Math.abs(length(n) - 1) < 1e-5, `unit normal on ${entry.name}`);
+      assert.ok(dot(cross(sub(b, a), sub(c, a)), n) > 0, `outward winding on ${entry.name}`);
     }
     assert.ok(Math.abs(max - 1) < 1e-6, entry.name);
   }
+  assert.throws(() => meshData({ vertices: [], faces: [] }));
+});
+
+test('chirality matches face-set reflection and mirror produces the exact enantiomorph', () => {
+  const k3 = (v) => v.map((x) => (Math.abs(x) < 1e-6 ? 0 : x).toFixed(5)).join(',');
+  const faceKey = (pts) => {
+    const ks = pts.map(k3);
+    let best = null;
+    for (const seq of [ks, [...ks].reverse()]) {
+      for (let s = 0; s < seq.length; s++) {
+        const k = seq.slice(s).concat(seq.slice(0, s)).join('|');
+        if (best === null || k < best) best = k;
+      }
+    }
+    return best;
+  };
+  assert.equal(polyhedra.filter((p) => p.chiral).length, 8, '8 chiral hexecontahedra');
+  for (const entry of polyhedra) {
+    const p = getPolyhedron(entry.id);
+    const origFaces = new Set(p.faces.map((f) => faceKey(f.map((i) => p.vertices[i]))));
+    const reflectedFaces = new Set(
+      p.faces.map((f) => faceKey(f.map((i) => {
+        const [x, y, z] = p.vertices[i];
+        return [-x, y, z];
+      }))),
+    );
+    const symmetric = origFaces.size === reflectedFaces.size && [...origFaces].every((k) => reflectedFaces.has(k));
+    assert.equal(symmetric, !entry.chiral, entry.name);
+
+    const mirrored = getPolyhedron(entry.id, { mirror: true });
+    const mirroredFaces = new Set(mirrored.faces.map((f) => faceKey(f.map((i) => mirrored.vertices[i]))));
+    assert.deepEqual(mirroredFaces, reflectedFaces, `mirror enantiomorph for ${entry.name}`);
+  }
+});
+
+test('gallery filter matches by family, name, face shape, catalogue, Wythoff symbol and chirality', () => {
+  assert.equal(polyhedra.filter((p) => matchesFilter(p)).length, 32);
+  assert.equal(polyhedra.filter((p) => matchesFilter(p, { family: 'catalan' })).length, 4);
+  assert.equal(polyhedra.filter((p) => matchesFilter(p, { family: 'stellation' })).length, 1);
+  assert.equal(polyhedra.filter((p) => matchesFilter(p, { family: 'star-dual' })).length, 27);
+
+  assert.deepEqual(
+    polyhedra.filter((p) => matchesFilter(p, { query: 'U29' })).map((p) => p.id),
+    ['pentagonal-hexecontahedron'],
+  );
+  assert.deepEqual(
+    polyhedra.filter((p) => matchesFilter(p, { query: 'golden rhombi' })).map((p) => p.id),
+    ['rhombic-hexecontahedron'],
+  );
+  assert.equal(polyhedra.filter((p) => matchesFilter(p, { query: 'antiparallelogram' })).length, 5);
+  assert.equal(polyhedra.filter((p) => matchesFilter(p, { query: 'chiral' })).length, 8);
+  assert.equal(polyhedra.filter((p) => matchesFilter(p, { family: 'star-dual', query: 'chiral' })).length, 7);
+  assert.equal(polyhedra.filter((p) => matchesFilter(p, { query: '| 2 3 5' })).length, 1);
+  assert.equal(polyhedra.filter((p) => matchesFilter(p, { query: 'nonexistent-shape' })).length, 0);
 });

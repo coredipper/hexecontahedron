@@ -76,7 +76,7 @@ function sameMatrix(a, b) {
 }
 
 /** Closure of a set of orthogonal generators (breadth-first). */
-export function generateGroup(generators) {
+function generateGroup(generators) {
   const elements = [IDENTITY];
   for (let i = 0; i < elements.length; i++) {
     for (const g of generators) {
@@ -112,7 +112,7 @@ class PointSet {
 }
 
 /** Canonical key of a closed polygon, independent of start vertex and direction. */
-export function cycleKey(indices) {
+function cycleKey(indices) {
   let best = null;
   for (const seq of [indices, [...indices].reverse()]) {
     for (let s = 0; s < seq.length; s++) {
@@ -223,7 +223,7 @@ function spherePoints(count) {
  * The equations are two quadratic cones intersected with the sphere, so there
  * are at most four pairs.
  */
-export function snubRoots(rotations) {
+function snubRoots(rotations) {
   const forms = rotations.map(quadraticForm);
   const roots = [];
   for (const start of spherePoints(400)) {
@@ -387,7 +387,7 @@ function rotationAxis(m) {
  * axes along x, y, z and a 5-fold axis along (0, 1, phi), i.e. the frame in
  * which the regular icosahedron has vertices (0, +-1, +-phi) and cyclic shifts.
  */
-export function standardFrame(group) {
+function standardFrame(group) {
   const rotations = group.filter((m) => determinant(m) > 0);
   const halfTurns = [];
   const fiveFold = [];

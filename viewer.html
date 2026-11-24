@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hexecontahedron Viewer</title>
+  <meta name="description" content="Interactive 3D viewer for the 32 hexecontahedra (60-faced polyhedra).">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpolygon points='16,2 28,9 28,23 16,30 4,23 4,9' fill='%230f111a' stroke='%237aa2f7' stroke-width='2'/%3E%3Cpolygon points='16,6 25,22 7,22' fill='none' stroke='%237aa2f7' stroke-width='1.5'/%3E%3C/svg%3E">
   <link rel="preload" href="vendor/fonts/outfit/outfit-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -11,7 +13,7 @@
   <div class="viewer-container">
     <header class="viewer-header">
       <div class="header-glass">
-        <a href="index.html" class="back-link">
+        <a href="index.html" id="back-link" class="back-link">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
           Back to Gallery
         </a>
@@ -22,7 +24,7 @@
           <details class="shape-details" id="shape-details" open>
             <summary>Details</summary>
             <dl class="shape-facts" id="shape-facts"></dl>
-            <p class="shape-note" id="shape-note"></p>
+            <p class="shape-note" id="shape-note" hidden></p>
           </details>
           <nav class="viewer-controls" aria-label="Viewer controls">
             <a id="prev-link" class="control-button" href="#">&#8249;</a>
@@ -30,6 +32,7 @@
             <a id="next-link" class="control-button" href="#">&#8250;</a>
             <button id="toggle-rotate" class="control-button" type="button" aria-pressed="true">Rotate</button>
             <button id="toggle-edges" class="control-button" type="button" aria-pressed="true">Edges</button>
+            <button id="toggle-mirror" class="control-button" type="button" aria-pressed="false" hidden>Mirror</button>
           </nav>
           <p class="hint">Drag to rotate, scroll to zoom, &larr; &rarr; to browse.</p>
         </div>

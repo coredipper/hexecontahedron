@@ -1,7 +1,7 @@
 // Converts polygon data ({ vertices, faces }) into flat triangle and edge
 // arrays ready for a GPU buffer. Independent of three.js.
 
-import { centroid, cross, dot, length, normalize, scale, sub } from './vec.js';
+import { centroid, cross, dot, length, scale, sub } from './vec.js';
 import { triangulateFace } from './polygon.js';
 
 /**
@@ -18,8 +18,10 @@ export function faceNormal(points) {
       if (length(n) > length(best)) best = n;
     }
   }
-  const n = normalize(best);
-  return dot(n, c) < 0 ? scale(n, -1) : n;
+  const n = length(best);
+  if (n < 1e-12) throw new Error('Degenerate face');
+  const unit = scale(best, 1 / n);
+  return dot(unit, c) < 0 ? scale(unit, -1) : unit;
 }
 
 /** Unique undirected edges as [a, b] vertex index pairs. */
@@ -45,7 +47,10 @@ export function edgeList(faces) {
  * farthest vertex is at distance `radius` from the origin.
  */
 export function meshData({ vertices, faces }, radius = 1) {
-  const s = radius / Math.max(...vertices.map(length));
+  if (!vertices.length || !faces.length) throw new Error('Polyhedron has no geometry');
+  const max = Math.max(...vertices.map(length));
+  if (!(max > 0)) throw new Error('Polyhedron vertices collapse to the origin');
+  const s = radius / max;
   const scaled = vertices.map((v) => scale(v, s));
   const positions = [];
   const normals = [];

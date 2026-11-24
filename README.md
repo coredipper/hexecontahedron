@@ -15,9 +15,12 @@ npm start                  # http://localhost:8000 (Node 18+, no dependencies)
 # or: python3 -m http.server 8000
 ```
 
-The gallery (`index.html`) links to the viewer (`viewer.html?shape=<id>`).
+The gallery (`index.html`) supports filtering by family or searching by name,
+face shape, U-number, or Wythoff symbol, and links to the viewer
+(`viewer.html?shape=<id>`).
 Viewer controls: drag to rotate, scroll to zoom, `←` `→` for the previous or
-next polyhedron. Buttons toggle auto-rotation and edges.
+next polyhedron. Buttons toggle auto-rotation, edges, and mirroring for the
+chiral hexecontahedra.
 
 ## How the shapes are computed
 
